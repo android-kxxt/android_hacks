@@ -1,0 +1,79 @@
+From a440e587aa9b89a91874514e30528795e60f0763 Mon Sep 17 00:00:00 2001
+From: kxxt <rsworktech@outlook.com>
+Date: Sun, 4 Feb 2024 08:54:01 +0800
+Subject: [PATCH] trace property reads
+
+Change-Id: I8b96897c562101ec720993ea0ef952d1ea5a3c90
+---
+ libc/system_properties/system_properties.cpp | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/libc/system_properties/system_properties.cpp b/libc/system_properties/system_properties.cpp
+index 1cb15c3df..959091889 100644
+--- a/libc/system_properties/system_properties.cpp
++++ b/libc/system_properties/system_properties.cpp
+@@ -50,6 +50,8 @@
+ #define SERIAL_DIRTY(serial) ((serial)&1)
+ #define SERIAL_VALUE_LEN(serial) ((serial) >> 24)
+ 
++extern "C" const char* __progname;
++
+ static bool is_dir(const char* pathname) {
+   struct stat info;
+   if (stat(pathname, &info) == -1) {
+@@ -133,6 +135,10 @@ const prop_info* SystemProperties::Find(const char* name) {
+     return nullptr;
+   }
+ 
++  async_safe_format_log(
++    ANDROID_LOG_ERROR, "prop-trace",
++    "%s find %s", __progname, name);
++
+   return pa->find(name);
+ }
+ 
+@@ -191,6 +197,9 @@ int SystemProperties::Read(const prop_info* pi, char* name, char* value) {
+         " __system_property_read_callback() instead.",
+         pi->name, strlen(pi->long_value()));
+   }
++  async_safe_format_log(
++    ANDROID_LOG_ERROR, "prop-trace",
++    "%s read %s = %s", __progname, pi->name, value);
+   return SERIAL_VALUE_LEN(serial);
+ }
+ 
+@@ -213,6 +222,9 @@ void SystemProperties::ReadCallback(const prop_info* pi,
+   char value_buf[PROP_VALUE_MAX];
+   uint32_t serial = ReadMutablePropertyValue(pi, value_buf);
+   callback(cookie, pi->name, value_buf, serial);
++  async_safe_format_log(
++    ANDROID_LOG_ERROR, "prop-trace",
++    "%s read %s = %s", __progname, pi->name, value_buf);
+ }
+ 
+ int SystemProperties::Get(const char* name, char* value) {
+@@ -267,6 +279,10 @@ int SystemProperties::Update(prop_info* pi, const char* value, unsigned int len)
+                         memory_order_release);
+   __futex_wake(serial_pa->serial(), INT32_MAX);
+ 
++  async_safe_format_log(
++    ANDROID_LOG_ERROR, "prop-trace",
++    "%s update %s = %s", __progname, pi->name, value);
++
+   return 0;
+ }
+ 
+@@ -300,6 +316,10 @@ int SystemProperties::Add(const char* name, unsigned int namelen, const char* va
+     return -1;
+   }
+ 
++  async_safe_format_log(
++    ANDROID_LOG_ERROR, "prop-trace",
++    "%s add %s = %s", __progname, name, value);
++
+   // There is only a single mutator, but we want to make sure that
+   // updates are visible to a reader waiting for the update.
+   atomic_store_explicit(serial_pa->serial(),
+-- 
+2.43.0
+
