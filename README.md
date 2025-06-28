@@ -30,4 +30,10 @@ This patch fakes the nosuid and nodev options for `/data` mountpoint.
 See the commit message and https://gist.github.com/FreddieOliveira/efe850df7ff3951cb62d74bd770dce27?permalink_comment_id=4842046#gistcomment-4842046
 for more details.
 
+## Delete directories with conflicting fscrypt policy to recover from bootloop
+
+Sometimes you might find yourself messed up with fscrypt policy on some directories and stuck in an infinite bootloop.
+The following patch could delete the offending directory and recover from the bootloop.
+
+- `system/core/0001-Delete-directory-with-fscrypt-policy-conflict-that-c.patch`
 
